@@ -1,0 +1,57 @@
+{
+    "type": "object",
+    "properties": {
+      "resource": {
+        "type": "string"
+      },
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "LeagueID": { "type": "string" },
+          "Season": { "type": "string" },
+          "IsOnlyCurrentSeason": { "type": "integer" }
+        },
+        "required": ["LeagueID", "Season", "IsOnlyCurrentSeason"]
+      },
+      "resultSets": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "headers": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "rowSet": {
+                "type": "array",
+                "items": {
+                    "type": "array",
+                    "items": [
+                        {"type": "integer"},
+                        {"type": "string"},
+                        {"type": "string"},
+                        {"type": "integer"},
+                        {"type": "string"},
+                        {"type": "string"},
+                        {"type": "string"},
+                        {"type": "string"},
+                        {"type": "integer"},
+                        {"type": "string"},
+                        {"type": "string"},
+                        {"type": "string"},
+                        {"type": ["string", "null"]},
+                        {"type": "string"},
+                        {"type": "string"},
+                        {"type": "string"}
+                        ]
+                    }
+                }
+          },
+          "required": ["name", "headers", "rowSet"]
+        }
+      }
+    },
+    "required": ["resource", "parameters", "resultSets"]
+  }
+  

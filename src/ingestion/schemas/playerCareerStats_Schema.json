@@ -1,0 +1,58 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "resource": {
+        "type": "string"
+      },
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "PerMode": {
+            "type": "string"
+          },
+          "PlayerID": {
+            "type": "integer"
+          },
+          "LeagueID": {
+            "type": "string"
+          }
+        },
+        "required": ["PerMode", "PlayerID", "LeagueID"]
+      },
+      "resultSets": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "headers": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "rowSet": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    { "type": "integer" },
+                    { "type": "string" },
+                    { "type": "number" },
+                    { "type": "null" }
+                  ]
+                }
+              }
+            }
+          },
+          "required": ["name", "headers", "rowSet"]
+        }
+      }
+    },
+    "required": ["resource", "parameters", "resultSets"]
+  }
+  
