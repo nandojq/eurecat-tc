@@ -1,1 +1,3 @@
 eurecat-pyenv/
+infra/.terraform/*
+infra/terraform.tfstate.backup
