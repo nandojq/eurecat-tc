@@ -9,9 +9,14 @@ import requests
 from requests import HTTPError, Timeout, RequestException
 from jsonschema import validate, ValidationError
 import time
-import json
+# import json
+import logging
+# from tqdm import tqdm
 
-from tqdm import tqdm
+# Setup logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
 ############################################################
 
 # NBA API Endpoint Data
@@ -39,43 +44,53 @@ def fetch_data(url, params=None, headers=None, timeout=10):
     
     # Error handling
     except HTTPError as http_err:
-        print("HTTP error occurred: {}".format(http_err))
+        logger.error("HTTP error occurred: {}".format(http_err))
     except ConnectionError:
-        print("Error: Failed to connect to the server")
+        logger.error("Error: Failed to connect to the server")
     except Timeout:
-        print("Error: The request timed out")
+        logger.error("Error: The request timed out")
     except RequestException as req_err:
-        print("Error: {}".format(req_err))
+        logger.error("Error: {}".format(req_err))
 
 ############################################################
 
 # MAIN INGESTION LOGIC
+def trigger_ingestion():
 
-## Fetch player data
-player_data = fetch_data(player_data_url, params=player_data_params)
-player_data = player_data["resultSets"][0]
+    logger.info("Ingestion function triggered")
 
-## Get updated list of player IDs
-player_id_list = [row[0] for row in player_data["rowSet"]]
-# print(player_id_list)
+    ## Fetch player data
+    logger.debug("Fetching player data...")
+    player_data = fetch_data(player_data_url, params=player_data_params)
+    player_data = player_data["resultSets"][0]
+    logger.debug("Player data successfuly ingested")
 
-## Fetch stat data for each player
-player_stat_dict = {}
-for player_id in tqdm(player_id_list):
-    player_stats_params["PlayerID"] = str(player_id)
-    data = fetch_data(player_stats_url, params=player_stats_params)
-    # Get only career total stats for regular season
-    reg_season_stats = next((item for item in data["resultSets  "] if item["name"] == "CareerTotalsRegularSeason"), None)
-    player_stat_dict[str(player_id)] = reg_season_stats
-    time.sleep(0.5)
+    ## Get updated list of player IDs
+    player_id_list = [row[0] for row in player_data["rowSet"]]
+    # print(player_id_list)
 
-## Append player stat data to player data
-ingest_data = {
-    "player_data": player_data,
-    "player_stats": player_stat_dict
-}
+    ## Fetch stat data for each player
+    logger.debug("Fetching player stat data...")
+    player_stat_dict = {}
+    for player_id in player_id_list[0:5]:
+        player_stats_params["PlayerID"] = str(player_id)
+        data = fetch_data(player_stats_url, params=player_stats_params)
+        # Get only career total stats for regular season
+        reg_season_stats = next((item for item in data["resultSets"] if item["name"] == "CareerTotalsRegularSeason"), None)
+        player_stat_dict[str(player_id)] = reg_season_stats
+        time.sleep(0.5)
+    logger.debug("Player stat data successfully ingested")
 
-## Save to file (debug)
-import json
-with open("./src/ingestion/ingest_output_example.json", 'w') as json_file:
-    json.dump(ingest_data, json_file, indent=4)
+    ## Append player stat data to player data
+    logger.debug("Merging ingested data")
+    ingest_data = {
+        "player_data": player_data,
+        "player_stats": player_stat_dict
+    }
+    logger.info("Ingestion successfully completed")
+
+    return ingest_data
+
+if "__main__" == __name__:
+    output_data = trigger_ingestion()
+    # print(output_data)
