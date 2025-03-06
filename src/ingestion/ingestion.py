@@ -7,7 +7,7 @@
 # Importing
 import requests
 from requests import HTTPError, Timeout, RequestException
-from jsonschema import validate, ValidationError
+# from jsonschema import validate, ValidationError
 import time
 # import json
 import logging
@@ -78,7 +78,7 @@ def trigger_ingestion():
         # Get only career total stats for regular season
         reg_season_stats = next((item for item in data["resultSets"] if item["name"] == "CareerTotalsRegularSeason"), None)
         player_stat_dict[str(player_id)] = reg_season_stats
-        # time.sleep(0.1)
+        # time.sleep(0.5)
     logger.debug("Player stat data successfully ingested")
 
     ## Append player stat data to player data

@@ -15,6 +15,7 @@ logging.basicConfig()
 
 ############################################################
 
+# MAIN DATA PRCOESSING LOGIC
 def process_data(ingest_data):
 
     logger.info("Processing function triggered")
