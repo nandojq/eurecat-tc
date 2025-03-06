@@ -1,4 +1,4 @@
-CREATE TABLE players (
+CREATE TABLE playerstats (
     PERSON_ID INT PRIMARY KEY,                      -- Player ID
     FIRST_NAME VARCHAR(50) NOT NULL,               -- Player's First Name
     LAST_NAME VARCHAR(50) NOT NULL,                -- Player's Last Name

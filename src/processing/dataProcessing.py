@@ -6,21 +6,18 @@
 
 # Importing
 import pandas as pd
-import json
 import logging
-from sqlalchemy import create_engine
+import sqlite3
 
 # Setup logger
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = logging.getLogger("processing")
+logging.basicConfig()
 
 ############################################################
 
-# Get local data (Debug)
-# with open(r"C:\Users\Fer\Desktop\Code\eurecat-tc\src\ingestion\ingest_example.json", "r") as f:
-#     ingest_data = json.load(f)
-
 def process_data(ingest_data):
+
+    logger.info("Processing function triggered")
 
     # Extract player data
     player_df = pd.DataFrame(
@@ -54,6 +51,8 @@ def process_data(ingest_data):
     cols = ['PERSON_ID', 'GP', 'GS', 'MIN', 'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS']
     proc_player_stat_df = player_stat_df[cols]
 
+    proc_player_stat_df.to_csv("test.csv")
+
     # Merge data frames
     proc_data = pd.merge(proc_player_df, proc_player_stat_df, on="PERSON_ID", how="outer")
 
@@ -61,7 +60,7 @@ def process_data(ingest_data):
     proc_data["PERSON_ID"] = proc_data["PERSON_ID"].astype(int)
     proc_data["FIRST_NAME"] = proc_data["FIRST_NAME"].astype(str)
     proc_data["LAST_NAME"] = proc_data["LAST_NAME"].astype(str)
-    proc_data["TEAM_ID"] = proc_data["TEAM_ID"].fillna(-1).astype(int)
+    proc_data["TEAM_ID"] = proc_data["TEAM_ID"].astype(int)
     proc_data["GP"] = proc_data["GP"].fillna(-1).astype(int)
     proc_data["GS"] = proc_data["GS"].fillna(-1).astype(int)
     proc_data["MIN"] = proc_data["MIN"].fillna(-1).astype(float)
@@ -85,34 +84,29 @@ def process_data(ingest_data):
     proc_data["PTS"] = proc_data["PTS"].fillna(-1).astype(int)
 
     # Connect to DB
-    DB_USER = "admin"
-    DB_PASSWORD = "mysuperlongpassword"
-    DB_HOST = "nba-database.c34qomea81x1.eu-west-3.rds.amazonaws.com"
-    DB_PORT = "3306" 
-    DB_NAME = "nba-database"
-    TABLE_NAME = "your_table"
+    conn = sqlite3.connect("db/sqlite-db")
+    cursor = conn.cursor()
 
-    # Create database connection
-    engine = create_engine(f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+    # Generate qury
+    columns = proc_data.columns.tolist()
+    placeholders = ', '.join(['?' for _ in columns])
+    update_clause = ', '.join([f"{col} = excluded.{col}" for col in columns if col != "PERSON_ID"])
+    insert_update_query = f'''
+        INSERT INTO 'playerstats' ({', '.join(columns)}) 
+        VALUES ({placeholders})
+        ON CONFLICT(PERSON_ID) DO UPDATE SET {update_clause}
+    '''
+    data_tuples = [tuple(row) for row in proc_data.itertuples(index=False, name=None)]
 
-    # Convert DataFrame to dictionary records
-    records = proc_data.to_dict(orient='records')
-
-    # Inject data with update logic
-    with engine.connect() as conn:
-        for record in records:
-            query = f"""
-            INSERT INTO {TABLE_NAME} (id, name, age)
-            VALUES ({record['id']}, '{record['name']}', {record['age']})
-            ON DUPLICATE KEY UPDATE 
-            name = VALUES(name), 
-            age = VALUES(age);
-            """
-            conn.execute(query)
+    # Execute query for each row
+    cursor.executemany(insert_update_query, data_tuples)
+    
+    # Commit changes
+    conn.commit()
+    conn.close()
 
     print("Data updated successfully!")
 
 if "__main__" == __name__:
     ingest_data = {}
     output_data = process_data(ingest_data)
-    # print(output_data)

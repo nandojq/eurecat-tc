@@ -11,11 +11,11 @@ from jsonschema import validate, ValidationError
 import time
 # import json
 import logging
-# from tqdm import tqdm
+from tqdm import tqdm
 
 # Setup logger
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = logging.getLogger("ingestion")
+logging.basicConfig()
 
 ############################################################
 
@@ -34,7 +34,7 @@ player_stats_params = {"PerMode": "Totals", "PlayerID": 0, "leagueId": "00"}
 ############################################################
 
 # API Data Fetch Function
-def fetch_data(url, params=None, headers=None, timeout=10):
+def fetch_data(url, params=None, headers=None, timeout=900):
     """ Generic function to handle data fetch API """
     # Try to fetch data
     try:
@@ -72,13 +72,13 @@ def trigger_ingestion():
     ## Fetch stat data for each player
     logger.debug("Fetching player stat data...")
     player_stat_dict = {}
-    for player_id in player_id_list[0:5]:
+    for player_id in tqdm(player_id_list):
         player_stats_params["PlayerID"] = str(player_id)
         data = fetch_data(player_stats_url, params=player_stats_params)
         # Get only career total stats for regular season
         reg_season_stats = next((item for item in data["resultSets"] if item["name"] == "CareerTotalsRegularSeason"), None)
         player_stat_dict[str(player_id)] = reg_season_stats
-        time.sleep(0.5)
+        # time.sleep(0.1)
     logger.debug("Player stat data successfully ingested")
 
     ## Append player stat data to player data
